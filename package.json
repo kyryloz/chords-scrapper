@@ -1,0 +1,12 @@
+{
+  "name"         : "chords-scrapper",
+  "version"      : "0.0.1",
+  "description"  : "Scrape the chords from web",
+  "main"         : "server.js",
+  "author"       : "zak",
+  "dependencies" : {
+    "express"    : "latest",
+    "request"    : "latest",
+    "cheerio"    : "latest"
+  }
+}

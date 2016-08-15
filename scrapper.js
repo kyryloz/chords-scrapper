@@ -33,6 +33,8 @@ request(url, function (error, response, html) {
     }
 });
 
+var id = 0;
+
 var scrapSong = function (songHref) {
     return new Promise(function (fulfill, reject) {
         request("http:" + songHref, function (error, response, html) {
@@ -46,6 +48,7 @@ var scrapSong = function (songHref) {
                     var lyrics = data.find(".b-podbor__text").text();
 
                     fulfill({
+                        id: id++,
                         title: title.replace(", аккорды", ""),
                         lyrics: lyrics
                     });

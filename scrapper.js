@@ -47,9 +47,12 @@ var scrapSong = function (songHref) {
                     var title = data.find("h1").text();
                     var lyrics = data.find(".b-podbor__text").text();
 
+                    title = title.replace(", аккорды", "").split("-");
+
                     fulfill({
                         id: id++,
-                        title: title.replace(", аккорды", ""),
+                        performerName: title[0].trim(),
+                        title: title[1].trim(),
                         lyrics: lyrics
                     });
                 });

@@ -2,22 +2,15 @@ var request = require('request');
 var fs = require("fs");
 var path = require('path');
 var jsonfile = require('jsonfile');
-var sync = require('sync');
+var async = require("async");
 
 var targetDir = "./output";
 var existedPerformers = [];
-var postedPerformers = [];
 
 getPerformers(function (data) {
     existedPerformers = data;
-    console.log(existedPerformers);
     processOutput();
 });
-
-var bindPerformerIdAndPostSong = function (existedPerformer, song) {
-    song.performerId = existedPerformer.id;
-    postSong(song);
-};
 
 function processOutput() {
     fs.readdir(targetDir, function (err, files) {
@@ -26,7 +19,7 @@ function processOutput() {
             process.exit(1);
         }
 
-        files.forEach(function (file) {
+        async.reduce(files, [], function (result, file, callback) {
             var filePath = path.join(targetDir, file);
             var song = jsonfile.readFileSync(filePath);
 
@@ -34,29 +27,26 @@ function processOutput() {
                 return performer.name === song.performerName;
             });
 
-            console.log("Process song", song.title);
-
             if (found.length) {
-                bindPerformerIdAndPostSong(found[0], song);
+                song.performerId = found[0].id;
+                result.push(song);
+                callback(null, result);
             } else {
-                if (contains(postedPerformers, song.performerName)) {
-                    console.log("yes");
-                    bindPerformerIdAndPostSong(found[0], song);
-                } else {
-                    console.log("no");
-
-                    console.log("sync start");
-
-                    sync(function() {
-                        var result = postPerformer.sync(null, song.performerName, bindPerformerIdAndPostSong, song);
-                        console.log(result);
-                    });
-
-                    console.log("sync end");
-
-                }
+                postPerformer(song.performerName, function (performer) {
+                    song.performerId = performer.id;
+                    result.push(song);
+                    callback(null, result);
+                });
             }
-        })
+        }, function(err, result) {
+            if (!err) {
+                result.forEach(function (song) {
+                    postSong(song);
+                })
+            } else {
+                console.error(err);
+            }
+        });
     });
 }
 
@@ -76,7 +66,6 @@ function postSong(song) {
 }
 
 function postPerformer(performer, callback) {
-    postedPerformers.push(performer);
     console.log("Post performer...", performer);
 
     request({
@@ -89,7 +78,8 @@ function postPerformer(performer, callback) {
     }, function (error, response, body) {
         if (!error && response.statusCode == 200) {
             console.log("Post performer success!", body.name, body.id);
-            callback(null, body);
+            existedPerformers.push(body);
+            callback(body);
         } else {
             console.error(error, performer);
         }

@@ -2,15 +2,22 @@ var request = require('request');
 var fs = require("fs");
 var path = require('path');
 var jsonfile = require('jsonfile');
+var sync = require('sync');
 
 var targetDir = "./output";
 var existedPerformers = [];
+var postedPerformers = [];
 
 getPerformers(function (data) {
     existedPerformers = data;
     console.log(existedPerformers);
     processOutput();
 });
+
+var bindPerformerIdAndPostSong = function (existedPerformer, song) {
+    song.performerId = existedPerformer.id;
+    postSong(song);
+};
 
 function processOutput() {
     fs.readdir(targetDir, function (err, files) {
@@ -27,10 +34,27 @@ function processOutput() {
                 return performer.name === song.performerName;
             });
 
-            if (found) {
-                var performer = found[0];
-                song.performerId = performer.id;
-                postSong(song);
+            console.log("Process song", song.title);
+
+            if (found.length) {
+                bindPerformerIdAndPostSong(found[0], song);
+            } else {
+                if (contains(postedPerformers, song.performerName)) {
+                    console.log("yes");
+                    bindPerformerIdAndPostSong(found[0], song);
+                } else {
+                    console.log("no");
+
+                    console.log("sync start");
+
+                    sync(function() {
+                        var result = postPerformer.sync(null, song.performerName, bindPerformerIdAndPostSong, song);
+                        console.log(result);
+                    });
+
+                    console.log("sync end");
+
+                }
             }
         })
     });
@@ -52,23 +76,22 @@ function postSong(song) {
 }
 
 function postPerformer(performer, callback) {
-    console.log("Post performer...", performer.name);
+    postedPerformers.push(performer);
+    console.log("Post performer...", performer);
 
-    $.ajax({
-        url: "http://localhost:8081/api/performers",
-        dataType: 'json',
-        type: 'POST',
-        data: performer,
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        success: function (data) {
-            console.log("Post performer success!", data.name);
-            callback(data);
-        },
-        error: function (xhr, status, err) {
-            console.error(status, err.toString(), data.title);
+    request({
+        url: 'http://localhost:8081/api/performers',
+        method: "POST",
+        json: true,
+        body: {
+            name: performer
+        }
+    }, function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            console.log("Post performer success!", body.name, body.id);
+            callback(null, body);
+        } else {
+            console.error(error, performer);
         }
     });
 }
@@ -79,4 +102,14 @@ function getPerformers(callback) {
             callback(JSON.parse(body));
         }
     });
+}
+
+function contains(a, obj) {
+    var i = a.length;
+    while (i--) {
+        if (a[i] === obj) {
+            return true;
+        }
+    }
+    return false;
 }

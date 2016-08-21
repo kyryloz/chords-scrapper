@@ -7,7 +7,7 @@ const SCRAP_URL = 'http://amdm.ru/akkordi/metallica/';
 const TARGET_DIR = "output";
 const DOM_PARSER = new DomParser;
 
-request(SCRAP_URL, function (error, response, html) {
+request(SCRAP_URL, (error, response, html) => {
     if (error) {
         console.error(error);
         process.exit(1);
@@ -33,8 +33,8 @@ request(SCRAP_URL, function (error, response, html) {
     asyncQueue.drain = () => console.log("All done!");
 });
 
-var scrapSong = function (songHref, callback) {
-    request(`http:${songHref}`, function (error, response, html) {
+function scrapSong(songHref, callback) {
+    request(`http:${songHref}`, (error, response, html) => {
         if (!error) {
             const song = DOM_PARSER.getSong(html);
             callback(null, song);
@@ -42,15 +42,15 @@ var scrapSong = function (songHref, callback) {
             callback(error);
         }
     });
-};
+}
 
-var save = function (song) {
+function save(song) {
     var fileName = `${TARGET_DIR}/${song.title}.json`;
-    jsonfile.writeFile(fileName, song, function (err) {
+    jsonfile.writeFile(fileName, song, err => {
         if (!err) {
             console.log('File successfully written:', fileName);
         } else {
             console.error('Error while writing file:', fileName);
         }
     });
-};
+}

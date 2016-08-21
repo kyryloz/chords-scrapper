@@ -43,9 +43,12 @@ export default class Api {
     }
 
     getPerformers(callback) {
-        request.get(`${BACKEND_ENDPOINT}/performers`, (error, response, body) => {
+        request.get({
+            url: `${BACKEND_ENDPOINT}/performers`,
+            json: true
+        }, (error, response, body) => {
             if (!error && response.statusCode == 200) {
-                callback(null, JSON.parse(body));
+                callback(null, body);
             } else {
                 callback(error);
                 console.error("Get performers error:",

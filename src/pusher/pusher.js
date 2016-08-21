@@ -10,9 +10,11 @@ const SOURCE_DIRECTORY = "./output";
 const STORED_PERFORMERS = [];
 const API = new Api;
 
-API.getPerformers(data => {
-    STORED_PERFORMERS.push(...data);
-    processOutput();
+API.getPerformers((err, data) => {
+    if (!err) {
+        STORED_PERFORMERS.push(...data);
+        processOutput();
+    }
 });
 
 function processOutput() {
@@ -39,13 +41,15 @@ function processOutput() {
                 result.push(song);
                 callback(null, result);
             } else {
-                API.postPerformer(song.performerName, performer => {
-                    STORED_PERFORMERS.push(performer);
-
-                    song.performerId = performer.id;
-
-                    result.push(song);
-                    callback(null, result);
+                API.postPerformer(song.performerName, (err, performer) => {
+                    if (!err) {
+                        STORED_PERFORMERS.push(performer);
+                        song.performerId = performer.id;
+                        result.push(song);
+                        callback(null, result);
+                    } else {
+                        callback(err);
+                    }
                 });
             }
         }, (err, result) => {

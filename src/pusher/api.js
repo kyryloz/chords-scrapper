@@ -15,7 +15,6 @@ export default class Api {
             if (!error && response.statusCode == 200) {
                 console.log("Post song success:", body.title);
             } else {
-                console.error(error, song.title);
                 console.error("Post song error:",
                     response.statusCode, response.body.message, song.title);
             }
@@ -34,8 +33,9 @@ export default class Api {
         }, (error, response, body) => {
             if (!error && response.statusCode == 200) {
                 console.log("Post performer success:", body.name, body.id);
-                callback(body);
+                callback(null, body);
             } else {
+                callback(error);
                 console.error("Post performer error:",
                     response.statusCode, response.body.message, performerName);
             }
@@ -45,8 +45,9 @@ export default class Api {
     getPerformers(callback) {
         request.get(`${BACKEND_ENDPOINT}/performers`, (error, response, body) => {
             if (!error && response.statusCode == 200) {
-                callback(JSON.parse(body));
+                callback(null, JSON.parse(body));
             } else {
+                callback(error);
                 console.error("Get performers error:",
                     response.statusCode, response.body.message);
             }

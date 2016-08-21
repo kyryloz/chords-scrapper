@@ -8,7 +8,7 @@ export default class Api {
         console.log("Post song:", song.title);
 
         request.post({
-            url: BACKEND_ENDPOINT + "/songs",
+            url: `${BACKEND_ENDPOINT}/songs`,
             json: true,
             body: song
         }, (error, response, body) => {
@@ -26,7 +26,7 @@ export default class Api {
         console.log("Post performer:", performerName);
 
         request.post({
-            url: BACKEND_ENDPOINT + "/performers",
+            url: `${BACKEND_ENDPOINT}/performers`,
             json: true,
             body: {
                 name: performerName
@@ -43,9 +43,12 @@ export default class Api {
     }
 
     getPerformers(callback) {
-        request.get(BACKEND_ENDPOINT + "/performers", (error, response, body) => {
+        request.get(`${BACKEND_ENDPOINT}/performers`, (error, response, body) => {
             if (!error && response.statusCode == 200) {
                 callback(JSON.parse(body));
+            } else {
+                console.error("Get performers error:",
+                    response.statusCode, response.body.message);
             }
         });
     }

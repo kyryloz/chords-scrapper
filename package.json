@@ -18,6 +18,6 @@
     "babel-preset-es2015": "^6.13.2"
   },
   "scripts": {
-    "push": "babel-node src/pusher/pusher.js"
+    "push": "babel-node $NODE_DEBUG_OPTION src/pusher/pusher.js"
   }
 }

@@ -4,6 +4,8 @@ import DomParser from "./dom-parser";
 import async from "async";
 
 const SCRAP_URL = 'http://amdm.ru/akkordi/metallica/';
+const REQUEST_RATE_MS = 300;
+const TOO_MANY_REQUESTS_TIMEOUT_MS = 30000;
 const TARGET_DIR = "output";
 const DOM_PARSER = new DomParser;
 
@@ -26,7 +28,7 @@ request(SCRAP_URL, (error, response, html) => {
                     callback(err);
                 }
             });
-        }, 300);
+        }, REQUEST_RATE_MS);
     }, 1);
 
     performerSongLinks.forEach(link => asyncQueue.push(link, (err, result) => err || save(result)));
@@ -54,7 +56,7 @@ function scrapSong(songHref, callback) {
             } else if (response.statusCode === 429) {
                 // too many requests, so wait a little
                 console.warn("Too many requests, wait 30 sec");
-                setTimeout(() => extractSong(), 30000);
+                setTimeout(() => extractSong(), TOO_MANY_REQUESTS_TIMEOUT_MS);
             }
         } else {
             callback(error);

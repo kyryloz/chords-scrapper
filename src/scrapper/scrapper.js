@@ -22,10 +22,11 @@ request(SCRAP_URL, (error, response, html) => {
                 if (!err) {
                     callback(null, result);
                 } else {
-                    console.log("Failed to process link:", link);
+                    console.error(err, "Failed to process link:", link);
+                    callback(err);
                 }
             });
-        }, 200);
+        }, 100);
     }, 1);
 
     performerSongLinks.forEach(link => asyncQueue.push(link, (err, result) => err || save(result)));
@@ -35,9 +36,26 @@ request(SCRAP_URL, (error, response, html) => {
 
 function scrapSong(songHref, callback) {
     request(`http:${songHref}`, (error, response, html) => {
-        if (!error) {
+
+        const extractSong = () => {
             const song = DOM_PARSER.getSong(html);
-            callback(null, song);
+
+            if (song) {
+                callback(null, song);
+            } else {
+                callback("Can't scrap song");
+            }
+        };
+
+        if (!error) {
+
+            if (response.statusCode === 200) {
+                extractSong();
+            } else if (response.statusCode === 429) {
+                // too many requests, so wait a little
+                console.warn("Too many requests, wait 12 sec");
+                setTimeout(() => extractSong(), 12000);
+            }
         } else {
             callback(error);
         }

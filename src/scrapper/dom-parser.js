@@ -29,6 +29,12 @@ export default class DomParser {
         const lyrics = songDiv.find(".b-podbor__text").text();
         const titleAndPerformer = title.replace(", аккорды", "").split("-");
 
+        // dumb check if we're on the right way
+
+        if (titleAndPerformer.length != 2) {
+            return null;
+        }
+
         return {
             id: this.id++,
             performerName: titleAndPerformer[0].trim(),

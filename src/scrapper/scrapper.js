@@ -26,7 +26,7 @@ request(SCRAP_URL, (error, response, html) => {
                     callback(err);
                 }
             });
-        }, 100);
+        }, 300);
     }, 1);
 
     performerSongLinks.forEach(link => asyncQueue.push(link, (err, result) => err || save(result)));
@@ -53,8 +53,8 @@ function scrapSong(songHref, callback) {
                 extractSong();
             } else if (response.statusCode === 429) {
                 // too many requests, so wait a little
-                console.warn("Too many requests, wait 12 sec");
-                setTimeout(() => extractSong(), 12000);
+                console.warn("Too many requests, wait 30 sec");
+                setTimeout(() => extractSong(), 30000);
             }
         } else {
             callback(error);

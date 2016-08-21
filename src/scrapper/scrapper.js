@@ -1,84 +1,56 @@
-"use strict";
+import jsonfile from "jsonfile";
+import request from "request";
+import DomParser from "./dom-parser";
+import async from "async";
 
-var fs = require('fs');
-var request = require('request');
-var cheerio = require('cheerio');
-var Promise = require('promise');
+const SCRAP_URL = 'http://amdm.ru/akkordi/metallica/';
+const TARGET_DIR = "output";
+const DOM_PARSER = new DomParser;
 
-var url = 'http://amdm.ru/akkordi/metallica/';
-
-request(url, function (error, response, html) {
-
-    if (!error) {
-        var $ = cheerio.load(html);
-
-        var resultPromises = [];
-
-        $('#tablesort a')
-            .slice(0, 40)
-            .each(function () {
-                var data = $(this);
-                var songUrl = data.attr("href");
-                resultPromises.push(scrapSong(songUrl));
-            });
-
-        Promise.all(resultPromises).then(function(result) {
-            save(result);
-        }, function(err) {
-            console.error("Failed to fetch some item", err);
-        });
-
-    } else {
+request(SCRAP_URL, function (error, response, html) {
+    if (error) {
         console.error(error);
+        process.exit(1);
     }
+
+    const performerSongLinks = DOM_PARSER.getLinks(html);
+
+    var asyncQueue = async.queue((link, callback) => {
+        console.log("Process:", link);
+        setTimeout(() => {
+            scrapSong(link, function(err, result) {
+                if (!err) {
+                    callback(null, result);
+                } else {
+                    console.log("Failed to process link:", link);
+                }
+            });
+        }, 200);
+    }, 1);
+
+    performerSongLinks.forEach(link => asyncQueue.push(link, (err, result) => err || save(result)));
+
+    asyncQueue.drain = () => console.log("All done!");
 });
 
-var id = 0;
-
-var scrapSong = function (songHref) {
-    return new Promise(function (fulfill, reject) {
-        request("http:" + songHref, function (error, response, html) {
-            if (!error) {
-                var $ = cheerio.load(html);
-
-                $('.b-podbor').each(function () {
-                    var data = $(this);
-
-                    var title = data.find("h1").text();
-                    var lyrics = data.find(".b-podbor__text").text();
-
-                    title = title.replace(", аккорды", "").split("-");
-
-                    fulfill({
-                        id: id++,
-                        performerName: title[0].trim(),
-                        title: title[1].trim(),
-                        lyrics: lyrics
-                    });
-                });
-            } else {
-                reject(error);
-            }
-        });
+var scrapSong = function (songHref, callback) {
+    request(`http:${songHref}`, function (error, response, html) {
+        if (!error) {
+            const song = DOM_PARSER.getSong(html);
+            callback(null, song);
+        } else {
+            callback(error);
+        }
     });
 };
 
-var save = function (result) {
-    var dir = "./output";
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir);
-    }
-
-    console.log("Saving...");
-
-    result.forEach(function (song) {
-        var fileName = song.title;
-        fs.writeFile(dir + "/" + fileName + ".json", JSON.stringify(song, null, 4), function (err) {
-            if (!err) {
-                console.log('File successfully written!', song.title);
-            } else {
-                console.error('Error while writing result', song.title, err);
-            }
-        });
+var save = function (song) {
+    var fileName = `${TARGET_DIR}/${song.title}.json`;
+    jsonfile.writeFile(fileName, song, function (err) {
+        if (!err) {
+            console.log('File successfully written:', fileName);
+        } else {
+            console.error('Error while writing file:', fileName);
+        }
     });
 };

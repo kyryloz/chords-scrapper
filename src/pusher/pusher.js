@@ -7,15 +7,9 @@ import Api from "./api";
 const GENERATE_RANDOM_NAMES = true;
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const SOURCE_DIRECTORY = "./output";
-const STORED_PERFORMERS = [];
 const API = new Api;
 
-API.getPerformers((err, data) => {
-    if (!err) {
-        STORED_PERFORMERS.push(...data);
-        processOutput();
-    }
-});
+processOutput();
 
 function processOutput() {
     fs.readdir(SOURCE_DIRECTORY, function (err, files) {
@@ -32,29 +26,33 @@ function processOutput() {
                 song.performerName = appendRandomChar(song.performerName);
             }
 
-            var found = STORED_PERFORMERS.filter(performer => {
-                return performer.name === song.performerName;
-            });
-
-            if (found.length) {
-                song.performerId = found[0].id;
+            function pushResult(performer) {
+                song.performerId = performer.id;
                 result.push(song);
                 callback(null, result);
-            } else {
-                API.postPerformer(song.performerName, (err, performer) => {
-                    if (!err) {
-                        STORED_PERFORMERS.push(performer);
-                        song.performerId = performer.id;
-                        result.push(song);
-                        callback(null, result);
+            }
+
+            API.getPerformerByName(song.performerName, (err, performer) => {
+                if (!err) {
+                    pushResult(performer);
+                } else {
+                    if (err === 404) {
+                        console.log(`Performer with name ${song.performerName} not found, create new`);
+                        API.postPerformer(song.performerName, (err, performer) => {
+                            if (!err) {
+                                pushResult(performer);
+                            } else {
+                                callback(err);
+                            }
+                        });
                     } else {
                         callback(err);
                     }
-                });
-            }
+                }
+            });
         }, (err, result) => {
             if (!err) {
-                result.forEach(song => API.postSong(song));
+                API.postSongs(result);
             } else {
                 console.error(err);
             }

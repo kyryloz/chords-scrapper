@@ -1,6 +1,7 @@
 import * as request from "request";
 
 const BACKEND_ENDPOINT = "http://localhost:8081/api";
+const authBearer = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiS2lyaWxsIFphcHlsYXlldiIsImlkIjo1LCJleHAiOjE0NzkwMTAwOTAsImlhdCI6MTQ3MzAxMDA5MCwiZW1haWwiOiJ6YXB5bGFldkBnbWFpbC5jb20ifQ.0BYvBazmnzXJ9eFQ-7pSXf2F80XikqmrLm-du0-qmwg";
 
 export default class Api {
 
@@ -10,7 +11,10 @@ export default class Api {
         request.post({
             url: `${BACKEND_ENDPOINT}/songs`,
             json: true,
-            body: song
+            body: song,
+            headers: {
+                "Authorization" : authBearer
+            }
         }, (error, response, body) => {
             if (!error) {
                 if (response.statusCode == 200) {
@@ -31,6 +35,9 @@ export default class Api {
         request.post({
             url: `${BACKEND_ENDPOINT}/performers`,
             json: true,
+            headers: {
+                "Authorization" : authBearer
+            },
             body: {
                 name: performerName
             }
@@ -53,7 +60,10 @@ export default class Api {
     getPerformers(callback) {
         request.get({
             url: `${BACKEND_ENDPOINT}/performers`,
-            json: true
+            json: true,
+            headers: {
+                "Authorization" : authBearer
+            }
         }, (error, response, body) => {
             if (!error) {
                 if (response.statusCode == 200) {
@@ -70,7 +80,10 @@ export default class Api {
     getPerformerByName(name, callback) {
         request.get({
             url: `${BACKEND_ENDPOINT}/performers/search/${name}`,
-            json: true
+            json: true,
+            headers: {
+                "Authorization" : authBearer
+            }
         }, (error, response, body) => {
             if (!error) {
                 if (response.statusCode == 200) {
@@ -90,7 +103,10 @@ export default class Api {
         request.post({
             url: `${BACKEND_ENDPOINT}/songs/batch`,
             json: true,
-            body: songs
+            body: songs,
+            headers: {
+                "Authorization" : authBearer
+            }
         }, (error, response, body) => {
             if (!error) {
                 if (response.statusCode == 200) {
